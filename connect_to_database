@@ -1,0 +1,126 @@
+package main
+
+import (
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+	"fmt"
+	//"os/user"
+)
+
+func main(){
+	////connect db
+	//db, err := sql.Open("mysql", "root:root@tcp(localhost)/iot_blockchain?charset=utf8")
+	//if err != nil {
+	//	fmt.Println("failed")
+	//}
+	////fmt.Println(db)
+	//
+	//rows, _ := db.Query("SELECT * FROM user")
+	//
+	//for rows.Next() {
+	//	var userId int
+	//	var userUID string
+	//	var userName string
+	//	var userRole string
+	//	rows.Columns()
+	//	_ = rows.Scan(&userId, &userUID, &userName, &userRole)
+	//	fmt.Println(userId)
+	//	fmt.Println(userUID)
+	//	fmt.Println(userName)
+	//	fmt.Println(userRole)
+	//}
+
+	db := &mysql_db{}
+	db.mysql_open()
+
+	//insert a contract
+	//db.insertToContract("demo Contract","1234","test case")
+
+	//find a user by id
+	//id,uid,name,role := db.findOneUser(1)
+
+	//find a contract by name
+	id,name,addr,desc := db.findOneContract("demo Contract")
+	if id==0 {
+		// nothing found.
+	}
+	//
+	//fmt.Printf("id: %v\n", id);
+	//fmt.Printf("name: %v\n", name);
+	//fmt.Printf("addr: %v\n", addr);
+	//fmt.Printf("desc: %v\n", desc);
+
+
+
+	//
+	//fmt.Printf("id: %v\n", id);
+	//fmt.Printf("uid: %v\n", uid);
+	//fmt.Printf("name: %v\n", name);
+	//fmt.Printf("role: %v\n", role);
+}
+
+
+var (
+	dbhostsip  = "localhost"
+	dbusername = "root"
+	dbpassowrd = "root"
+	dbname     = "iot_blockchain"
+)
+
+
+type mysql_db struct {
+	db *sql.DB
+}
+
+func (this *mysql_db) mysql_open() {
+	Odb, err := sql.Open("mysql", dbusername+":"+dbpassowrd+"@tcp("+dbhostsip+")/"+dbname)
+	if err != nil {
+		fmt.Println("failed")
+	}
+	fmt.Println("success")
+	this.db = Odb
+}
+
+func (this *mysql_db) mysql_close() { //
+	defer this.db.Close()
+	fmt.Println("closed")
+}
+
+func (this *mysql_db) insertToUser(uid string, name string, role string){
+	stmt, _ := this.db.Prepare("INSERT user SET uid=?,name=?,role=?")
+	_, _ = stmt.Exec(uid, name, role)
+}
+
+func (this *mysql_db) insertToIot(name string){
+	stmt, _ := this.db.Prepare("INSERT iot SET name=?")
+	_, _ = stmt.Exec(name)
+}
+
+func (this *mysql_db) insertToContract(name string, contract_address string, contract_description string){
+	stmt, _ := this.db.Prepare("INSERT contract SET name=?,contract_address=?,contract_description=?")
+	_, _ = stmt.Exec(name, contract_address, contract_description)
+}
+
+func (this *mysql_db) findOneUser(whereID int) (int,string,string,string){
+	id := 0
+	uid := ""
+	name := ""
+	role := ""
+	//query a row of data
+	rows3 := this.db.QueryRow("select * from user where id = ?", whereID);
+	rows3.Scan(&id, &uid, &name, &role);
+
+	return id,uid,name,role
+}
+
+func (this *mysql_db) findOneContract(whereName string) (int,string,string,string){
+	id := 0
+	name := ""
+	address := ""
+	desc := ""
+	// Query a row of data
+	row := this.db.QueryRow("select * from contract where name = ?", whereName);
+	row.Scan(&id, &name, &address, &desc);
+
+	return id,name,address,desc
+}
